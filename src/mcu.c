@@ -51,7 +51,7 @@ static void initGPIO(void)
     // UART
     GPIO_PinRemapConfig(GPIO_FullRemap_USART1, ENABLE);
     GPIO_InitStructure.GPIO_Pin = UART_TX_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(UART_GPIO, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = UART_RX_PIN;
@@ -72,7 +72,7 @@ static void initGPIO(void)
 #if (HWVER == 2)
     // LIGHTCTL
     GPIO_InitStructure.GPIO_Pin = LIGHTCTL_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(LIGHTCTL_GPIO, &GPIO_InitStructure);
 #endif
@@ -84,20 +84,20 @@ static void initGPIO(void)
 
     // TRIP_EN
     GPIO_InitStructure.GPIO_Pin = TRIP_EN_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(TRIP_EN_GPIO, &GPIO_InitStructure);
 
     // NRF_CS
     GPIO_InitStructure.GPIO_Pin = NRF_CS_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(NRF_CS_GPIO, &GPIO_InitStructure);
-    GPIO_WriteBit(NRF_CS_GPIO, NRF_CS_PIN, 1);
+    GPIO_SetBits(NRF_CS_GPIO, NRF_CS_PIN);
 
     // NRF_CE
     GPIO_InitStructure.GPIO_Pin = NRF_CE_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(NRF_CE_GPIO, &GPIO_InitStructure);
 
@@ -105,6 +105,21 @@ static void initGPIO(void)
     GPIO_InitStructure.GPIO_Pin = NRF_IRQ_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(NRF_IRQ_GPIO, &GPIO_InitStructure);
+
+    // SPI_MOSI
+    GPIO_InitStructure.GPIO_Pin = SPI_MOSI_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_Init(SPI_GPIO, &GPIO_InitStructure);
+
+    // SPI_MISO
+    GPIO_InitStructure.GPIO_Pin = SPI_MISO_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(SPI_GPIO, &GPIO_InitStructure);
+
+    // SPI_SCK
+    GPIO_InitStructure.GPIO_Pin = SPI_SCK_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_Init(SPI_GPIO, &GPIO_InitStructure);
 }
 
 static void initTimers(void)
@@ -137,7 +152,7 @@ static inline void initSPI(void)
     SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
     SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
     SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
     SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
     SPI_InitStructure.SPI_CRCPolynomial = 7;
     SPI_Init(SPI1, &SPI_InitStructure);

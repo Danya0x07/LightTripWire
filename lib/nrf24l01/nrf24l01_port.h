@@ -17,14 +17,16 @@
  * Здесь может быть подключение пользовательских заголовочных файлов
  */
 
+#include "mcu.h"
+
 /**
  * @name    Макросы для управления выводами трансивера.
  * @{
  */
-#define _csn_high() /* тут должно быть что-то */
-#define _csn_low()  /* тут должно быть что-то */
-#define _ce_high()  /* тут должно быть что-то */
-#define _ce_low()   /* тут должно быть что-то */
+#define _csn_high() GPIO_SetBits(NRF_CS_GPIO, NRF_CS_PIN)
+#define _csn_low()  GPIO_ResetBits(NRF_CS_GPIO, NRF_CS_PIN)
+#define _ce_high()  GPIO_SetBits(NRF_CE_GPIO, NRF_CE_PIN)
+#define _ce_low()   GPIO_ResetBits(NRF_CE_GPIO, NRF_CE_PIN)
 /** @} */
 
 /**
@@ -44,7 +46,7 @@
  */
 static inline uint8_t _spi_transfer_byte(uint8_t byte)
 {
-    /* ... */
+    return SPI_TransferByte(byte);
 }
 
 /**
@@ -65,11 +67,11 @@ static inline uint8_t _spi_transfer_byte(uint8_t byte)
 static inline void _spi_transfer_bytes(uint8_t *in, const uint8_t *out,
                                        size_t len)
 {
-    /* ... */
+    SPI_TransferBytes(in, out, len);
 }
 
 /** Функция миллисекундной задержки. */
-#define _delay_ms(ms)   delay_ms((ms))
+#define _delay_ms(ms)   Millis_Wait((ms))
 
 /**
  * Функция микросекундной задержки.
@@ -78,6 +80,6 @@ static inline void _spi_transfer_bytes(uint8_t *in, const uint8_t *out,
  * Данная функция не является необходимой. Если микросекундная задержка не
  * доступна, необходимо указать это в файле nrf24l01_conf.h
  */
-#define _delay_us(us)   delay_us((us))
+#define _delay_us(us)   Micros_Wait((us))
 
 #endif /* _NRF24L01_PORT_H */

@@ -40,6 +40,11 @@
 
 #   define NRF_IRQ_GPIO     GPIOC
 #   define NRF_IRQ_PIN      GPIO_Pin_2
+
+#   define SPI_GPIO         GPIOC
+#   define SPI_SCK_PIN      GPIO_Pin_5
+#   define SPI_MOSI_PIN     GPIO_Pin_6
+#   define SPI_MISO_PIN      GPIO_Pin_7
 #elif (HWVER == 2)
 #   define LED_LINK_GPIO    GPIOD
 #   define LED_LINK_PIN     GPIO_Pin_2
@@ -76,6 +81,11 @@
 
 #   define NRF_IRQ_GPIO     GPIOC
 #   define NRF_IRQ_PIN      GPIO_Pin_4
+
+#   define SPI_GPIO         GPIOC
+#   define SPI_SCK_PIN      GPIO_Pin_5
+#   define SPI_MOSI_PIN     GPIO_Pin_6
+#   define SPI_MISO_PIN     GPIO_Pin_7
 #endif
 
 void MCU_Init(void);
