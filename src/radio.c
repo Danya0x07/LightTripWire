@@ -23,28 +23,20 @@ int Radio_Init(bool finish)
     return nrf24l01_tx_configure(&config);
 }
 
-int Radio_Send(bool armed)
+void Radio_Send(const struct ProtocolMessage *message, bool overwrite)
 {
-    struct ProtocolMessageLTW msgLTW = {
-        .status = armed ? ProtocolStatusLTW_ARMED : ProtocolStatusLTW_DISARMED
-    };
-    int retcode = 0;
-
-    if (nrf24l01_full_tx_fifo())  {
+    if (nrf24l01_full_tx_fifo() || overwrite)  {
         nrf24l01_flush_tx_fifo();
     }
     if (nrf24l01_get_interrupts() & NRF24L01_IRQ_MAX_RT) {
         nrf24l01_flush_tx_fifo();
         nrf24l01_clear_interrupts(NRF24L01_IRQ_MAX_RT);
-        retcode = -1;
     }
-    nrf24l01_tx_write_pld(&msgLTW, sizeof(struct ProtocolMessageLTW));
+    nrf24l01_tx_write_pld(message, sizeof(struct ProtocolMessage));
     nrf24l01_tx_transmit();
-
-    return retcode;
 }
 
-bool Radio_CheckResponse(uint8_t *response)
+bool Radio_ReadResponse(struct ProtocolMessage *response)
 {
     bool responseReceived = false;
     uint8_t irq = nrf24l01_get_interrupts();
@@ -54,16 +46,15 @@ bool Radio_CheckResponse(uint8_t *response)
     }
     if (irq & NRF24L01_IRQ_RX_DR) {
         do {
-            if (nrf24l01_read_pld_size() != sizeof(struct ProtocolMessageTMU)) {
+            if (nrf24l01_read_pld_size() != sizeof(struct ProtocolMessage)) {
                 nrf24l01_flush_rx_fifo();
                 nrf24l01_clear_interrupts(NRF24L01_IRQ_RX_DR);
-                break;
+                responseReceived = false;
+                continue;
             }
-            struct ProtocolMessageTMU msgTMU;
-            nrf24l01_read_pld(&msgTMU, sizeof(struct ProtocolMessageTMU));
+            nrf24l01_read_pld(response, sizeof(struct ProtocolMessage));
             nrf24l01_clear_interrupts(NRF24L01_IRQ_RX_DR);
             responseReceived = true;
-            *response = (uint8_t)msgTMU.cmd;
         } while (nrf24l01_data_in_rx_fifo());
     }
     return responseReceived;

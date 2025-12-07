@@ -3,9 +3,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "protocol.h"
 
-int Radio_Init(bool finish);
-int Radio_Send(bool armed);
-bool Radio_CheckResponse(uint8_t *response);
+int Radio_Init(bool useFinishAddress);
+void Radio_Send(const struct ProtocolMessage *message, bool overwrite);
+bool Radio_ReadResponse(struct ProtocolMessage *response);
 
 #endif // _INC_RADIO_H

@@ -11,26 +11,21 @@
 #   define __packed __attribute__((packed))
 #endif
 
-enum __packed ProtocolCommandTMU {
-    ProtocolCommandTMU_ARM,
-    ProtocolCommandTMU_DISARM
+__packed struct ProtocolMessage {
+    uint8_t timerState;
 };
 
-struct ProtocolMessageTMU {
-    enum ProtocolCommandTMU cmd;
-};
+_Static_assert(sizeof(struct ProtocolMessage) == 1, "incorrect ProtocolMessage size");
 
-_Static_assert(sizeof(struct ProtocolMessageTMU) == 1, "Incorrect TMU payload size.");
+typedef enum {
+    TimerState_IDLE,
+    TimerState_RUN,
+    TimerState_HALT
+} TimerState;
 
-enum __packed ProtocolStatusLTW {
-    ProtocolStatusLTW_DISARMED,
-    ProtocolStatusLTW_ARMED
-};
-
-struct ProtocolMessageLTW {
-    enum ProtocolStatusLTW status;
-};
-
-_Static_assert(sizeof(struct ProtocolMessageLTW) == 1, "Incorrect LTW payload size.");
+typedef enum {
+    Role_START,
+    Role_FINISH
+} Role;
 
 #endif // _INC_PROTOCOL_H

@@ -51,7 +51,7 @@ static void initGPIO(void)
     // UART
     GPIO_PinRemapConfig(GPIO_FullRemap_USART1, ENABLE);
     GPIO_InitStructure.GPIO_Pin = UART_TX_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(UART_GPIO, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = UART_RX_PIN;
@@ -166,21 +166,34 @@ static void initADC(void)
 
     ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
     ADC_InitStructure.ADC_ScanConvMode = DISABLE;
-    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+    ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
     ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
     ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
     ADC_InitStructure.ADC_NbrOfChannel = 1;
     ADC_Init(ADC1, &ADC_InitStructure);
+    
+    ADC_RegularChannelConfig(ADC1, LIGHTSENS_CH, 1, ADC_SampleTime_30Cycles);
+    ADC_InjectedSequencerLengthConfig(ADC1, 1);
+    ADC_InjectedChannelConfig(ADC1, BATTSENS_CH, 1, ADC_SampleTime_30Cycles);
+    ADC_ExternalTrigInjectedConvConfig(ADC1, ADC_ExternalTrigInjecConv_T2_CC3);
+    //ADC_ExternalTrigInjectedConvCmd(ADC1, ENABLE);
+
+    ADC_AnalogWatchdogThresholdsConfig(ADC1, 1023, 0);
+	ADC_AnalogWatchdogSingleChannelConfig(ADC1, LIGHTSENS_CH);
+	//ADC_AnalogWatchdogCmd(ADC1, ADC_AnalogWatchdog_SingleRegEnable);
+    ADC_ITConfig(ADC1, ADC_IT_AWD, ENABLE);
+
     ADC_Cmd(ADC1, ENABLE);
     __NOP();
     __NOP();
-
+    
     ADC_ResetCalibration(ADC1);
     while(ADC_GetResetCalibrationStatus(ADC1))
         ;
     ADC_StartCalibration(ADC1);
     while(ADC_GetCalibrationStatus(ADC1))
         ;
+    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
 
 static void initPFIC(void)
@@ -195,6 +208,12 @@ static void initPFIC(void)
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel = ADC_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 void MCU_Init(void)
@@ -208,11 +227,13 @@ void MCU_Init(void)
     initPFIC();
 }
 
-unsigned ADC_Read(unsigned channel)
+void ADC_SetThreshold(uint16_t threshold)
 {
-	ADC_RegularChannelConfig(ADC1, (uint16_t)channel, 1, ADC_SampleTime_30Cycles);
-	ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+    ADC_AnalogWatchdogThresholdsConfig(ADC1, 1023, threshold);
+}
 
+unsigned ADC_Read(void)
+{
 	while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC))
         ;
 	uint16_t val = ADC_GetConversionValue(ADC1);

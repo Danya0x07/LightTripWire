@@ -89,7 +89,14 @@
 #endif
 
 void MCU_Init(void);
-unsigned ADC_Read(unsigned channel);
+
+void ADC_SetThreshold(uint16_t threshold);
+unsigned ADC_Read(void);
+
+#define ADC_WD_ON()     ADC_AnalogWatchdogCmd(ADC1, ADC_AnalogWatchdog_SingleRegEnable)
+#define ADC_WD_OFF()    ADC_AnalogWatchdogCmd(ADC1, ADC_AnalogWatchdog_None);
+#define ADC_IRQ_ON()    NVIC_EnableIRQ(ADC_IRQn)
+#define ADC_IRQ_OFF()   NVIC_DisableIRQ(ADC_IRQn)
 
 uint32_t Micros_Get(void);
 void Micros_Wait(uint32_t ms);
