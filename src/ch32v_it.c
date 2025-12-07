@@ -19,9 +19,9 @@ void ADC1_IRQHandler()
     extern volatile Role role;
     extern volatile TimerState state;
 
-    if(ADC_GetITStatus(ADC1, ADC_IT_AWD)) {
-        uint16_t val = ADC_GetConversionValue(ADC1);
-        printf("ACWD %d\n", val);
+    if (ADC_GetITStatus(ADC1, ADC_IT_AWD)) {
+        // uint16_t val = ADC_GetConversionValue(ADC1);
+        // printf("ACWD %d\n", val);
         if (role == Role_START) {
             state = TimerState_RUN;
         }

@@ -9,14 +9,13 @@ static void initRCC(void)
     RCC_HCLKConfig(RCC_SYSCLK_Div3); // 8 МГц
     RCC_GetClocksFreq(&MCU_rccClocks);
 
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+    // RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1
             | RCC_APB2Periph_AFIO
             | RCC_APB2Periph_GPIOA
             | RCC_APB2Periph_GPIOC
             | RCC_APB2Periph_GPIOD
             | RCC_APB2Periph_SPI1
-            | RCC_APB2Periph_TIM1
             | RCC_APB2Periph_USART1, ENABLE);
 }
 
@@ -59,6 +58,7 @@ static void initGPIO(void)
     GPIO_Init(UART_GPIO, &GPIO_InitStructure);
 
     // BATTCTL
+    GPIO_PinRemapConfig(GPIO_Remap_PA1_2, DISABLE);
     GPIO_InitStructure.GPIO_Pin = BATTCTL_PIN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
@@ -124,7 +124,7 @@ static void initGPIO(void)
 
 static void initTimers(void)
 {
-    SysTick->CTLR = 0x9;  // HCLK / 8 = 1 кГц
+    SysTick->CTLR = 0x9;  // HCLK / 8 = 1 МГц
 }
 
 static inline void initUART(uint32_t baudrate)
@@ -173,14 +173,13 @@ static void initADC(void)
     ADC_Init(ADC1, &ADC_InitStructure);
     
     ADC_RegularChannelConfig(ADC1, LIGHTSENS_CH, 1, ADC_SampleTime_30Cycles);
+
     ADC_InjectedSequencerLengthConfig(ADC1, 1);
     ADC_InjectedChannelConfig(ADC1, BATTSENS_CH, 1, ADC_SampleTime_30Cycles);
-    ADC_ExternalTrigInjectedConvConfig(ADC1, ADC_ExternalTrigInjecConv_T2_CC3);
-    //ADC_ExternalTrigInjectedConvCmd(ADC1, ENABLE);
+    ADC_ExternalTrigInjectedConvConfig(ADC1, ADC_ExternalTrigInjecConv_None);
 
     ADC_AnalogWatchdogThresholdsConfig(ADC1, 1023, 0);
 	ADC_AnalogWatchdogSingleChannelConfig(ADC1, LIGHTSENS_CH);
-	//ADC_AnalogWatchdogCmd(ADC1, ADC_AnalogWatchdog_SingleRegEnable);
     ADC_ITConfig(ADC1, ADC_IT_AWD, ENABLE);
 
     ADC_Cmd(ADC1, ENABLE);
@@ -209,6 +208,7 @@ static void initPFIC(void)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+    // ADC
     NVIC_InitStructure.NVIC_IRQChannel = ADC_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
@@ -234,11 +234,7 @@ void ADC_SetThreshold(uint16_t threshold)
 
 unsigned ADC_Read(void)
 {
-	while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC))
-        ;
-	uint16_t val = ADC_GetConversionValue(ADC1);
-
-	return val;
+	return ADC_GetConversionValue(ADC1);;
 }
 
 uint32_t Micros_Get(void)

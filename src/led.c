@@ -11,6 +11,11 @@ void Led_StatusSet(bool state)
     GPIO_WriteBit(LED_STAT_GPIO, LED_STAT_PIN, state);
 }
 
+void Led_StatusToggle(void)
+{
+    GPIO_WriteBit(LED_STAT_GPIO, LED_STAT_PIN, !GPIO_ReadOutputDataBit(LED_STAT_GPIO, LED_STAT_PIN));
+}
+
 void Led_StatusBlink(unsigned times, unsigned duration)
 {
     while (times--) {

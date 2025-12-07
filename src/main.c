@@ -4,6 +4,7 @@
 #include "protocol.h"
 #include "trip.h"
 #include "led.h"
+#include "battery.h"
 #include <stdio.h>
 
 #include <scheduler.h>
@@ -12,38 +13,21 @@
 volatile Role role;
 volatile TimerState state = TimerState_HALT;
 
-// static void _PrintBatteryValue(void)
-// {
-//     GPIO_WriteBit(BATTCTL_GPIO, BATTCTL_PIN, 1);
-//     Millis_Wait(1);
-
-//     unsigned adcVal= ADC_Read(BATTSENS_CH);
-//     GPIO_WriteBit(BATTCTL_GPIO, BATTCTL_PIN, 0);
-
-//     printf("Batt_Raw: %d\n", adcVal);
-// }
-// static struct ShedulerTask TASK_PrintBattery = {.execute = _PrintBatteryValue, .period = 200, .enabled = 0};
+static void _PrintBatteryVoltage(void)
+{
+    printf("Battery: %dmV\n", Battery_GetVoltage());
+}
+static struct SchedulerTask TASK_PrintBatteryVoltage = {.execute = _PrintBatteryVoltage, .period = 10000, .enabled = 0};
 
 static void _PrintLightValue(void)
 {
-#ifdef LIGHTCTL_PIN
-    GPIO_WriteBit(LIGHTCTL_GPIO, LIGHTCTL_PIN, 1);
-    Millis_Wait(1);
-#endif
-
-    unsigned adcVal = ADC_Read();
-
-#ifdef LIGHTCTL_PIN
-    GPIO_WriteBit(LIGHTCTL_GPIO, LIGHTCTL_PIN, 0);
-#endif
-
-    printf("Light_Raw: %d\n", adcVal);
+    printf("Light: %d\n", ADC_Read());
 }
-static struct SchedulerTask TASK_PrintLight = {.execute = _PrintLightValue, .period = 200, .enabled = 0};
+static struct SchedulerTask TASK_PrintLightValue = {.execute = _PrintLightValue, .period = 200, .enabled = 0};
 
-static void _PerformRadioCommunication(void)
+static void _PerformIdleRadioCommunication(void)
 {
-    static int retryCounter = 0;
+    static int retryCounter = 10;
     struct ProtocolMessage response;
 
     ADC_IRQ_OFF();
@@ -81,12 +65,14 @@ static void _PerformRadioCommunication(void)
     ADC_IRQ_ON();
 }
 
-static struct SchedulerTask TASK_SendRadio = {.execute = _PerformRadioCommunication, .period = 100, .enabled = 1};
+static struct SchedulerTask TASK_PerformIdleRadioCommunication = {.execute = _PerformIdleRadioCommunication, .period = 100, .enabled = 1};
 
 static struct SchedulerTask *const shedulerTasks[] = {
-    //&TASK_PrintBattery,
-    &TASK_PrintLight,
-    &TASK_SendRadio,
+    &TASK_PrintBatteryVoltage,
+    &TASK_PrintLightValue,
+    &TASK_PerformIdleRadioCommunication,
+    &TASK_CheckBattery,
+    &TASK_IndicateLowBattery,
     NULL
 };
 
@@ -96,37 +82,37 @@ static int SetTelemetryMode(int argc, char *argv[])
         return -1;
 
     if (argv[0][0] == 'l') {
-        TASK_PrintLight.enabled = 1;
-        //TASK_PrintBattery.enabled = 0;
+        TASK_PrintLightValue.enabled = 1;
+        TASK_PrintBatteryVoltage.enabled = 0;
     }
     else if (argv[0][0] == 'b') {
-        TASK_PrintLight.enabled = 0;
-        //TASK_PrintBattery.enabled = 1;
+        TASK_PrintLightValue.enabled = 0;
+        TASK_PrintBatteryVoltage.enabled = 1;
     }
     else if (argv[0][0] == 'n') {
-        TASK_PrintLight.enabled = 0;
-        //TASK_PrintBattery.enabled = 0;
+        TASK_PrintLightValue.enabled = 0;
+        TASK_PrintBatteryVoltage.enabled = 0;
     }
     return 0;
 }
 
-static int SetRadioTransmission(int argc, char *argv[])
+static int SwitchRadioTransmission(int argc, char *argv[])
 {
     if (argc != 1)
         return -1;
 
     if (argv[0][0] == '1') {
-        TASK_SendRadio.enabled = 1;
+        TASK_PerformIdleRadioCommunication.enabled = 1;
     }
     else if (argv[0][0] == '0') {
-        TASK_SendRadio.enabled = 0;
+        TASK_PerformIdleRadioCommunication.enabled = 0;
     }
     return 0;
 }
 
 static const struct ShellCommand *const shellCommands[] = {
     &(struct ShellCommand){.name = "telemode", .execute = SetTelemetryMode},
-    &(struct ShellCommand){.name = "radio", .execute = SetRadioTransmission},
+    &(struct ShellCommand){.name = "radio", .execute = SwitchRadioTransmission},
     NULL
 };
 
@@ -146,14 +132,11 @@ int main(void)
     MCU_Init();
     PrintClocks();
 
-#if (HWVER == 1)
-    role = GPIO_ReadInputDataBit(BTN_GPIO, BTN_PIN) == 1 ? Role_FINISH : Role_START;
-    while (GPIO_ReadInputDataBit(BTN_GPIO, BTN_PIN))
-        ;
-    Millis_Wait(10);
-#elif (HWVER == 2)
-    bool finish = GPIO_ReadInputDataBit(FINISH_GPIO, FINISH_PIN);
-#endif
+    // role = GPIO_ReadInputDataBit(BTN_GPIO, BTN_PIN) == 1 ? Role_FINISH : Role_START;
+    // while (GPIO_ReadInputDataBit(BTN_GPIO, BTN_PIN))
+    //     ;
+    // Millis_Wait(10);
+    role = Role_FINISH;
     
     Trip_Calibrate();
     Sheduler_Setup(shedulerTasks);
