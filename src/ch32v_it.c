@@ -16,7 +16,7 @@ void USART1_IRQHandler(void)
 __attribute__((interrupt("WCH-Interrupt-fast")))
 void ADC1_IRQHandler()
 {
-    extern volatile Role role;
+    extern const Role role;
     extern volatile TimerState state;
 
     if (ADC_GetITStatus(ADC1, ADC_IT_AWD)) {

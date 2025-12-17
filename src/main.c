@@ -10,7 +10,7 @@
 #include <scheduler.h>
 #include <shell.h>
 
-volatile Role role;
+const Role role = ROLE;
 volatile TimerState state = TimerState_HALT;
 
 static void _PrintBatteryVoltage(void)
@@ -47,8 +47,8 @@ static void _PerformIdleRadioCommunication(void)
             }
             else if (role == Role_FINISH) {
                 Trip_Arm();
-                state = TimerState_RUN;
             }
+            state = TimerState_RUN;
         }
         else if (state == TimerState_RUN && requestedState == TimerState_HALT) {
             if (role == Role_FINISH) {
@@ -131,12 +131,6 @@ int main(void)
 
     MCU_Init();
     PrintClocks();
-
-    // role = GPIO_ReadInputDataBit(BTN_GPIO, BTN_PIN) == 1 ? Role_FINISH : Role_START;
-    // while (GPIO_ReadInputDataBit(BTN_GPIO, BTN_PIN))
-    //     ;
-    // Millis_Wait(10);
-    role = Role_FINISH;
     
     Trip_Calibrate();
     Sheduler_Setup(shedulerTasks);
